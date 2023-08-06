@@ -8,8 +8,8 @@ import javax.servlet.annotation.*;
 
 
 //import com.sun.deploy.net.HttpRequest;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 
 @WebServlet(name = "loginServlet", value = "/login")
@@ -51,23 +51,37 @@ public class LoginServlet extends HttpServlet {
  
 
         
-        if(userName.equals("admin") && password.equals("password")){
-            out.println("Welcome Back Admin, Happy shopping!");
-        }
-        else{
-        
-
-            // vulnerable code
-            Logger logger = LogManager.getLogger(com.example.log4shell.log4j.class);
-            logger.error(userName);
-
-            out.println("<code> the password you entered was invalid, <u> we will log your information </u> </code>");
+         // Validate user input (username and password)
+        if (isValidInput(userName) && isValidInput(password) && !isJndiInjection(userName)) {
+            if (userName.equals("admin") && password.equals("password")) {
+                out.println("Welcome Back Admin, Happy shopping!");
+            } else {
+                out.println("<code> the password you entered was invalid.</code>");
+            }
+        } else {
+            out.println("<code> Invalid input. Please enter valid username and password.</code>");
         }
         
                out.println("</body></html>");
 
     }
     
+     
+       private boolean isValidInput(String input) {
+        // Validate that the input is not null, empty, or contains JNDI-related characters
+        return input != null && !input.trim().isEmpty() && !containsJndiCharacters(input);
+    }
+
+    private boolean containsJndiCharacters(String input) {
+        // Check for JNDI-related characters
+        return input.contains("jndi:") || input.contains("ldap:") || input.contains("rmi:")
+                || input.contains("jdbc:") || input.contains("exec:");
+    }
+
+    private boolean isJndiInjection(String input) {
+        // Check for the specific JNDI string pattern
+        return input.matches("\\$\\{jndi:ldap://[0-9.]+:\\d+/[a-zA-Z]+\\}");
+    }
     
 
     public void destroy() {
